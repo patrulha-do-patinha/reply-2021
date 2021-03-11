@@ -1,7 +1,7 @@
 from dataclasses import dataclass
-import sys, math
+import sys, math, itertools
 
-buildings = []
+buildings = dict()
 antennas = []
 
 @dataclass
@@ -29,70 +29,66 @@ def to_2d(i):
 
 for _ in range(buildings_count):
     [x, y, latency_weight, connection_speed] = [int(x) for x in input().split()]
-    buildings.append(Building(x, y, latency_weight, connection_speed))
+    buildings[to_flat(x, y)] = Building(x, y, latency_weight, connection_speed)
 
 for i in range(antennas_count):
     [area, speed] = [int(x) for x in input().split() ]
     antennas.append(Antenna(i, area, speed))
 
+# max_heat = 0
+# heat = [0] * (width*height)
+# for building in buildings:
+#     for dx in range(-avg_area, avg_area):
+#         for dy in range(-avg_area, avg_area):
+#             nx = building.x + dx
+#             ny = building.y + dy
+#             if nx >= width or ny >= height:
+#                 continue
+#             i = ny * width + nx
+#             heat[i] += dx + dy
+#             if heat[i] > max_heat:
+#                 max_heat = heat[i]
+# if max_heat > 0:
+#     for i in range(len(heat)):
+#         heat[i] = heat[i] / max_heat
 
-avg_area = math.floor(sum((a.area for a in antennas)) / len(antennas))
-
-max_heat = 0
-heat = [0] * (width*height)
-for building in buildings:
-    for dx in range(-avg_area, avg_area):
-        for dy in range(-avg_area, avg_area):
-            nx = building.x + dx
-            ny = building.y + dy
-            if nx >= width or ny >= height:
-                continue
-            i = ny * width + nx
-            heat[i] += dx + dy
-            if heat[i] > max_heat:
-                max_heat = heat[i]
-if max_heat > 0:
-    for i in range(len(heat)):
-        heat[i] = heat[i] / max_heat
-
-placed = set()
-
-buildings = sorted(buildings, key=lambda b: b.speed, reverse=True)
+buildings_list = sorted(buildings, key=lambda b: b.speed, reverse=True)
 antennas = sorted(antennas, key=lambda a: a.speed, reverse=True)
+
 for i, antenna in enumerate(antennas):
-    building = buildings[i]
-    best_heat = 1
-    best_heat_n = to_flat(building.x, building.y)
-    for dx in range(-antenna.area, antenna.area):
-        for dy in range(-antenna.area, antenna.area):
-            if dy + dx > antenna.area:
-                continue
-            nx = building.x + dx
-            ny = building.y + dy
-            if nx >= width or ny >= height or nx < 0 or ny < 0:
-                continue
-            n = to_flat(nx, ny)
-            if n in placed:
-                continue
-            if heat[n] < best_heat:
-                best_heat = heat[n]
-                best_heat_n = n
-    if best_heat_n not in placed:
-        (nx, ny) = to_2d(best_heat_n)
-        antenna.x = nx
-        antenna.y = ny
-        placed.add(best_heat_n)
+    best_points = 0
+    best_building = None
+    # best_in_area = None
+    if len(buildings) == 0:
+        break
+    for building in buildings_list[:10]:
+        points = 0
+        # in_area = []
+        for dx in range(-antenna.area, antenna.area):
+            for dy in range(-antenna.area, antenna.area):
+                if dy + dx > antenna.area:
+                    continue
+                nx = building.x + dx
+                ny = building.y + dy
+                if nx >= width or ny >= height or nx < 0 or ny < 0:
+                    continue
+                n = to_flat(nx, ny)
+                if n in buildings:
+                    b2 = buildings[n]
+                    points += b2.speed * antenna.speed
+                    points -= (dx + dy) * b2.latency_weight
+                    # in_area.append(n)
+        if points > best_points:
+            best_points = points
+            best_building = building
+            # best_in_area = in_area
 
-
-# best_places = sorted(enumerate(heat), key=lambda h: h[1])
-# for i, antenna in enumerate(antennas):
-#     place = best_places[i][0]
-#     x = place % width
-#     y = place // width
-#     antenna.x = x
-#     antenna.y = y
-    
-
+    if best_building != None:
+        antenna.x = best_building.x
+        antenna.y = best_building.y
+        del buildings[to_flat(antenna.x, antenna.y)]
+        # for key in best_in_area:
+        #     del buildings[key]
 
 antennas_to_place = [a for a in antennas if a.x != None and a.y != None ]
 print(len(antennas_to_place))
