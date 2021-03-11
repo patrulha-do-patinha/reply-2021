@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import sys
 
-buildings = dict()
+buildings = []
 antennas = []
 
 @dataclass
@@ -24,7 +24,7 @@ class Antenna:
 
 for _ in range(buildings_count):
     [x, y, latency_weight, connection_speed] = [ int(x) for x in input().split() ]
-    buildings[(x,y)] = Building(x, y, latency_weight, connection_speed)
+    buildings.append(Building(x, y, latency_weight, connection_speed))
 
 for i in range(antennas_count):
     [area, speed] = [int(x) for x in input().split() ]
@@ -32,28 +32,13 @@ for i in range(antennas_count):
 
 
 
-buildings_list = sorted(buildings.values(), key=lambda b: b.speed, reverse=True)
+buildings = sorted(buildings, key=lambda b: b.speed, reverse=True)
 antennas = sorted(antennas, key=lambda a: a.speed, reverse=True)
 
-placed_antennas = set()
-
-directions = [(1,0), (0,1), (-1,0), (0,-1), (-1,-1), (-1,1), (1,-1), (1,1) ]
-
 for i, antenna in enumerate(antennas):
-    building = buildings_list[i]
-    for d in directions:
-        nx = building.x + d[0]
-        ny = building.y + d[1]
-        if (nx, ny) in buildings:
-            continue
-        if (nx, ny) in placed_antennas:
-            continue
-        if nx < 0 or ny < 0 or nx >= width or ny >= height:
-            continue
-        antenna.x = nx
-        antenna.y = ny
-        placed_antennas.add((nx,ny))
-        break
+    building = buildings[i]
+    antenna.x = building.x
+    antenna.y = building.y
 
 
 antennas_to_place = [a for a in antennas if a.x != None and a.y != None ]
