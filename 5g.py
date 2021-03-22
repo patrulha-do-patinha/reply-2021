@@ -16,6 +16,8 @@ class Antenna:
     i: int
     area: int
     speed: int
+    width_telo: int = None
+    height_telo: int = None
     x: int = None
     y: int = None
 
@@ -31,33 +33,44 @@ for i in range(antennas_count):
     antennas.append(Antenna(i, area, speed))
 
 
-
-buildings_list = sorted(buildings.values(), key=lambda b: b.speed, reverse=True)
-antennas = sorted(antennas, key=lambda a: a.speed, reverse=True)
-
-placed_antennas = set()
-
-directions = [(1,0), (0,1), (-1,0), (0,-1), (-1,-1), (-1,1), (1,-1), (1,1) ]
-
+antennas = sorted(antennas, key=lambda a: a.speed * a.area, reverse=True)
+antennas = antennas[:10]
+print(len(antennas))
 for i, antenna in enumerate(antennas):
-    building = buildings_list[i]
-    for d in directions:
-        nx = building.x + d[0]
-        ny = building.y + d[1]
-        if (nx, ny) in buildings:
-            continue
-        if (nx, ny) in placed_antennas:
-            continue
-        if nx < 0 or ny < 0 or nx >= width or ny >= height:
-            continue
-        antenna.x = nx
-        antenna.y = ny
-        placed_antennas.add((nx,ny))
-        break
+    buildings_list = sorted(buildings.values(), key=lambda b: b.speed, reverse=True)
+    print(len(buildings))
+    current_buildings_list = buildings_list[:150]
 
+    points_for_antenna = []
+    antenna.height_telo = antenna.area
+    antenna.width_telo = antenna.area
+    while (width%antenna.width_telo != 0):
+        antenna.width_telo = antenna.width_telo - 1
+    while (height%antenna.height_telo != 0):
+        antenna.height_telo = antenna.height_telo - 1
 
-antennas_to_place = [a for a in antennas if a.x != None and a.y != None ]
-print(len(antennas_to_place))
-for antenna in antennas_to_place:
-    print(f"{antenna.i} {antenna.x} {antenna.y}")
+    width_squares = int(width / antenna.width_telo)
+    height_squares = int(height / antenna.height_telo)
+
+    for height_index in range(antenna.height_telo,height,antenna.height_telo):
+        for width_index in range(antenna.width_telo,width,antenna.width_telo):
+            if(height_index%2 == width_index%2):
+                points_for_antenna.append([height_index,width_index])
+    
+    arrayPuntuaciones = []
+    for point in points_for_antenna:
+        pointTotal = 0
+        for building in current_buildings_list:
+            if(abs(building.x - point[0]) + abs(building.y - point[1]) <= antenna.area):
+                pointTotal = pointTotal + building.speed
+        arrayPuntuaciones.append(pointTotal)
+
+    indexGanador = arrayPuntuaciones.index(max(arrayPuntuaciones))
+    point_for_this_antena = points_for_antenna[indexGanador]
+    print(f"{antenna.i} {point_for_this_antena[0]} {point_for_this_antena[1]}")
+
+    for building in current_buildings_list:
+        if(abs(building.x - point_for_this_antena[0]) + abs(building.y - point_for_this_antena[1]) <= antenna.area):
+            del buildings[(building.x,building.y)]
+    
 
